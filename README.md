@@ -1,6 +1,6 @@
-# Terroir — Backend
+# Valle Café — Backend
 
-Backend de **Terroir** (e‑commerce de café) construido con [NestJS](https://nestjs.com) + Prisma + PostgreSQL.
+Backend de **Valle Café** (e‑commerce de restaurante) construido con [NestJS](https://nestjs.com) + Prisma + PostgreSQL.
 Corre en producción en **Google Cloud Run** con CI/CD desde este repo (push a `main` → deploy).
 
 ## Puesta en marcha (Docker, desarrollo)
@@ -46,9 +46,9 @@ construye `DATABASE_URL` a partir de las variables `POSTGRES_*`.
 
 | Variable | Req. | Default | Descripción |
 |---|---|---|---|
-| `POSTGRES_USER` | sí | `terroir_user` | Usuario de la base de datos |
+| `POSTGRES_USER` | sí | `vallecafe_user` | Usuario de la base de datos |
 | `POSTGRES_PASSWORD` | sí | — | Contraseña de la base de datos |
-| `POSTGRES_DB` | sí | `terroir_db` | Nombre de la base de datos |
+| `POSTGRES_DB` | sí | `vallecafe_db` | Nombre de la base de datos |
 | `POSTGRES_EXT_PORT` | no | `5432` | Puerto de Postgres expuesto al host |
 | `TZ` | no | `America/Caracas` | Zona horaria del contenedor |
 | `DATABASE_URL` | auto | — | URL de conexión Prisma. La arma docker-compose; defínela solo si corres sin Docker. En Cloud Run viene del secreto `terroir-database-url` (socket `/cloudsql/...`) |
@@ -70,7 +70,7 @@ construye `DATABASE_URL` a partir de las variables `POSTGRES_*`.
 | `SMTP_HOST` | sí | `mailpit` | Host SMTP (prod: `smtp.resend.com`) |
 | `SMTP_PORT` | sí | `1025` | Puerto SMTP (prod: `587`) |
 | `SMTP_USER` / `SMTP_PASS` | no | `mailpit` | Credenciales SMTP (prod: `resend` / API key en el secreto `terroir-smtp-pass`) |
-| `SMTP_FROM` | no | `noreply@terroir.local` | Remitente de los correos |
+| `SMTP_FROM` | no | `noreply@vallecafe24.com` | Remitente de los correos |
 | `MAILPIT_*` | no (dev) | — | Config del contenedor Mailpit (UI en `:8025`) |
 | `PGADMIN_*` | no (dev) | — | Credenciales/puerto de pgAdmin (UI en `:5050`) |
 

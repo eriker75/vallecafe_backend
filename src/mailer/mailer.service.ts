@@ -55,7 +55,7 @@ export class MailerService {
 
   private get from(): string {
     return (
-      this.config.get<string>('SMTP_FROM') ?? 'Terroir <noreply@terroir.local>'
+      this.config.get<string>('SMTP_FROM') ?? 'Valle Café <noreply@vallecafe24.com>'
     );
   }
 

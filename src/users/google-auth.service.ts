@@ -4,7 +4,7 @@ import { OAuth2Client, type TokenPayload } from 'google-auth-library';
 
 /**
  * Verifica los `id_token` de Google (login social). Sigue el patrón del ejemplo
- * `icatam-main` (OAuth2Client.verifyIdToken), endurecido para Terroir:
+ * `icatam-main` (OAuth2Client.verifyIdToken), endurecido para Valle Café:
  *   · valida la firma del token contra las llaves públicas de Google,
  *   · comprueba que el `aud` sea uno de NUESTROS client IDs (web/iOS/Android),
  *     evitando que un id_token emitido para otra app se acepte aquí.

@@ -1,6 +1,6 @@
 services:
   postgres:
-    container_name: terroir_postgres
+    container_name: vallecafe_postgres
     image: postgres:16-alpine
     restart: always
     environment:
@@ -21,7 +21,7 @@ services:
       - appnet
 
   pgadmin:
-    container_name: terroir_pgadmin
+    container_name: vallecafe_pgadmin
     image: dpage/pgadmin4:9.10.0
     restart: on-failure
     environment:
@@ -37,7 +37,7 @@ services:
       - appnet
 
   mailpit:
-    container_name: terroir_mailpit
+    container_name: vallecafe_mailpit
     image: axllent/mailpit:latest
     restart: always
     environment:
@@ -63,8 +63,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: terroir_backend
-    image: terroir_backend_dev
+    container_name: vallecafe_backend
+    image: vallecafe_backend_dev
     # tini como PID 1: reapea los procesos hijos del watcher y reenvía señales,
     # liberando el puerto al recargar → evita "EADDRINUSE :::3000".
     init: true
@@ -115,6 +115,6 @@ networks:
 
 volumes:
   postgresdata:
-    name: terroir-postgresdata
+    name: vallecafe-postgresdata
   pgadmindata:
-    name: terroir-pgadmindata
+    name: vallecafe-pgadmindata

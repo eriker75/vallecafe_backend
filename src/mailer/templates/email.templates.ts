@@ -3,7 +3,7 @@
 // que todo el estilo va en el atributo style de cada elemento.
 
 const BRAND = {
-  name: 'Terroir',
+  name: 'Valle Café',
   dark: '#3B2A1E',
   accent: '#C06A2B',
   beige: '#F3ECE4',

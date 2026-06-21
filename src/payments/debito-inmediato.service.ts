@@ -145,7 +145,7 @@ export class DebitoInmediatoService {
       cedula,
       telefono,
       monto,
-      nombre: nombre || 'Cliente Terroir',
+      nombre: nombre || 'Cliente Valle Café',
       otp,
       concepto,
     });

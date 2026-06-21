@@ -39,9 +39,9 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   const config = new DocumentBuilder()
-    .setTitle('Terroir E-commerce API')
+    .setTitle('Valle Café E-commerce API')
     .setDescription(
-      'API REST para la plataforma de e-commerce Terroir. Gestiona usuarios, productos, pedidos, carrito, wishlist, cupones, categorías, etiquetas, banners y notificaciones.',
+      'API REST para la plataforma de e-commerce Valle Café. Gestiona usuarios, productos, pedidos, carrito, wishlist, cupones, categorías, etiquetas, banners y notificaciones.',
     )
     .setVersion('1.0')
     .addBearerAuth()

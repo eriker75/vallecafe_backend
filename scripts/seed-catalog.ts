@@ -6,7 +6,7 @@
  *
  * Ejecutar dentro del contenedor del backend (tiene DATABASE_URL y el cliente
  * de Prisma generado):
- *   docker exec terroir_backend npx ts-node scripts/seed-catalog.ts
+ *   docker exec vallecafe_backend npx ts-node scripts/seed-catalog.ts
  */
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -58,7 +58,7 @@ const origin = (value: string) => ({ name: 'origin', value });
 
 const PRODUCTS: SeedProduct[] = [
   {
-    name: 'Espresso Terroir',
+    name: 'Café del Valle',
     description: 'Intenso y sofisticado, con notas de chocolate y cacao.',
     price: 5.0,
     stock: 50,

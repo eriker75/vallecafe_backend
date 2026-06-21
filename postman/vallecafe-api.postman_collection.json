@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Terroir E-commerce API",
-    "description": "Colección completa para probar todos los endpoints de la API REST de Terroir.\n\n**Variables de colección:**\n- `baseUrl` → http://localhost:3000\n- `token` → JWT del usuario autenticado\n- `adminToken` → JWT de un usuario admin\n- `userId` → ID del usuario de prueba\n- `productId` → ID del producto de prueba\n- `categoryId` → ID de la categoría de prueba\n- `tagId` → ID del tag de prueba\n- `orderId` → ID del pedido de prueba\n- `cartId` → ID del carrito de prueba\n- `wishlistId` → ID de la wishlist de prueba\n- `addressId` → ID de la dirección de prueba\n- `couponId` → ID del cupón de prueba\n- `bannerId` → ID del banner de prueba\n- `notificationId` → ID de la notificación de prueba\n- `applicationId` → ID de la aplicación de cupón\n- `couponCode` → Código del cupón (ej: VERANO2025)",
+    "name": "Valle Café E-commerce API",
+    "description": "Colección completa para probar todos los endpoints de la API REST de Valle Café.\n\n**Variables de colección:**\n- `baseUrl` → http://localhost:3000\n- `token` → JWT del usuario autenticado\n- `adminToken` → JWT de un usuario admin\n- `userId` → ID del usuario de prueba\n- `productId` → ID del producto de prueba\n- `categoryId` → ID de la categoría de prueba\n- `tagId` → ID del tag de prueba\n- `orderId` → ID del pedido de prueba\n- `cartId` → ID del carrito de prueba\n- `wishlistId` → ID de la wishlist de prueba\n- `addressId` → ID de la dirección de prueba\n- `couponId` → ID del cupón de prueba\n- `bannerId` → ID del banner de prueba\n- `notificationId` → ID de la notificación de prueba\n- `applicationId` → ID de la aplicación de cupón\n- `couponCode` → Código del cupón (ej: VERANO2025)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [

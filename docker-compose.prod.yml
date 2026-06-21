@@ -1,6 +1,6 @@
 services:
   postgres:
-    container_name: terroir_postgres
+    container_name: vallecafe_postgres
     image: postgres:16-alpine
     restart: always
     environment:
@@ -28,8 +28,8 @@ services:
         - linux/amd64
       args:
         NODE_IMAGE: ${NODE_IMAGE:-node:20-alpine}
-    container_name: terroir_backend
-    image: terroir_backend_prod
+    container_name: vallecafe_backend
+    image: vallecafe_backend_prod
     restart: always
     ports:
       - "${BACKEND_PORT:-3000}:3000"
@@ -62,6 +62,6 @@ networks:
 
 volumes:
   postgresdata:
-    name: terroir-postgresdata
+    name: vallecafe-postgresdata
   uploads:
-    name: terroir-uploads
+    name: vallecafe-uploads
