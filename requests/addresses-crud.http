@@ -1,0 +1,42 @@
+@baseUrl = http://localhost:3000
+
+### -----------------------------
+### ADDRESSES CRUD
+### -----------------------------
+
+### Create address
+POST {{baseUrl}}/addresses
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "label": "Casa",
+  "recipientName": "Juan Perez",
+  "phone": "+58 412-0000000",
+  "line1": "Av. Principal, Edif. Centro",
+  "line2": "Apto 2B",
+  "city": "Caracas",
+  "state": "Distrito Capital",
+  "zip": "1010",
+  "country": "Venezuela",
+  "isDefault": true
+}
+
+### Get all addresses
+GET {{baseUrl}}/addresses
+
+### Get one address by id
+GET {{baseUrl}}/addresses/{{addressId}}
+
+### Update address
+PATCH {{baseUrl}}/addresses/{{addressId}}
+Content-Type: application/json
+
+{
+  "label": "Oficina",
+  "line1": "Calle 2, Torre Norte",
+  "isDefault": false
+}
+
+### Delete address
+DELETE {{baseUrl}}/addresses/{{addressId}}

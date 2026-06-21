@@ -1,0 +1,966 @@
+{
+  "info": {
+    "name": "Terroir E-commerce API",
+    "description": "Colección completa para probar todos los endpoints de la API REST de Terroir.\n\n**Variables de colección:**\n- `baseUrl` → http://localhost:3000\n- `token` → JWT del usuario autenticado\n- `adminToken` → JWT de un usuario admin\n- `userId` → ID del usuario de prueba\n- `productId` → ID del producto de prueba\n- `categoryId` → ID de la categoría de prueba\n- `tagId` → ID del tag de prueba\n- `orderId` → ID del pedido de prueba\n- `cartId` → ID del carrito de prueba\n- `wishlistId` → ID de la wishlist de prueba\n- `addressId` → ID de la dirección de prueba\n- `couponId` → ID del cupón de prueba\n- `bannerId` → ID del banner de prueba\n- `notificationId` → ID de la notificación de prueba\n- `applicationId` → ID de la aplicación de cupón\n- `couponCode` → Código del cupón (ej: VERANO2025)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "token", "value": "PEGAR_JWT_AQUI", "type": "string" },
+    { "key": "adminToken", "value": "PEGAR_JWT_ADMIN_AQUI", "type": "string" },
+    { "key": "userId", "value": "cld_user_id", "type": "string" },
+    { "key": "productId", "value": "cld_product_id", "type": "string" },
+    { "key": "categoryId", "value": "cld_category_id", "type": "string" },
+    { "key": "tagId", "value": "cld_tag_id", "type": "string" },
+    { "key": "orderId", "value": "cld_order_id", "type": "string" },
+    { "key": "cartId", "value": "cld_cart_id", "type": "string" },
+    { "key": "wishlistId", "value": "cld_wishlist_id", "type": "string" },
+    { "key": "addressId", "value": "cld_address_id", "type": "string" },
+    { "key": "couponId", "value": "cld_coupon_id", "type": "string" },
+    { "key": "bannerId", "value": "cld_banner_id", "type": "string" },
+    { "key": "notificationId", "value": "1", "type": "string" },
+    { "key": "applicationId", "value": "cld_application_id", "type": "string" },
+    { "key": "couponCode", "value": "VERANO2025", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "GET / — Ping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}", "host": ["{{baseUrl}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "POST /users/login — Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/users/login", "host": ["{{baseUrl}}"], "path": ["users", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"usuario@ejemplo.com\",\n  \"password\": \"contraseña123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /users — Registrar usuario",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"usuario@ejemplo.com\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"password\": \"contraseña123\",\n  \"phone\": \"+58 412-0000000\",\n  \"address\": \"Av. Principal 123\",\n  \"city\": \"Caracas\",\n  \"state\": \"Distrito Capital\",\n  \"zip\": \"1010\",\n  \"country\": \"Venezuela\",\n  \"role\": \"customer\",\n  \"status\": \"active\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /users — [Admin] Listar todos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/users?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                { "key": "limit", "value": "20", "description": "Registros a retornar (default 20)" },
+                { "key": "offset", "value": "0", "description": "Registros a saltar (default 0)" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /users/:id — Obtener usuario",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] }
+          }
+        },
+        {
+          "name": "PATCH /users/:id — Actualizar usuario",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Juan Actualizado\",\n  \"phone\": \"+58 414-1111111\"\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /users/:id — [Admin] Eliminar usuario",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "POST /products — [Admin] Crear producto",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Vino Tinto Reserva 2020\",\n  \"description\": \"Vino tinto de uva Malbec con crianza de 12 meses en barrica.\",\n  \"price\": 45.99,\n  \"mainImage\": \"https://cdn.ejemplo.com/vino.jpg\",\n  \"images\": [\"https://cdn.ejemplo.com/img1.jpg\"],\n  \"stock\": 100,\n  \"categoryId\": \"{{categoryId}}\",\n  \"tagIds\": [\"{{tagId}}\"],\n  \"attributes\": [\n    { \"name\": \"Color\", \"value\": \"Rojo\" },\n    { \"name\": \"Varietal\", \"value\": \"Malbec\" }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /products — Listar todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "limit", "value": "20", "description": "Registros a retornar (default 20)" },
+                { "key": "offset", "value": "0", "description": "Registros a saltar (default 0)" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /products/:id — Obtener producto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "PATCH /products/:id — [Admin] Actualizar producto",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 39.99,\n  \"stock\": 80\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /products/:id — [Admin] Eliminar producto",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "POST /categories — [Admin] Crear categoría",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/categories", "host": ["{{baseUrl}}"], "path": ["categories"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Vinos Tintos\",\n  \"slug\": \"vinos-tintos\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /categories — Listar todas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories"],
+              "query": [
+                { "key": "limit", "value": "20", "description": "Registros a retornar (default 20)" },
+                { "key": "offset", "value": "0", "description": "Registros a saltar (default 0)" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /categories/:id — Obtener categoría",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["categories", "{{categoryId}}"] }
+          }
+        },
+        {
+          "name": "PATCH /categories/:id — [Admin] Actualizar categoría",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["categories", "{{categoryId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Vinos Tintos Premium\"\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /categories/:id — [Admin] Eliminar categoría",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["categories", "{{categoryId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tags",
+      "item": [
+        {
+          "name": "POST /tags — [Admin] Crear etiqueta",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/tags", "host": ["{{baseUrl}}"], "path": ["tags"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Orgánico\",\n  \"slug\": \"organico\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /tags — Listar todas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tags?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["tags"],
+              "query": [
+                { "key": "limit", "value": "20", "description": "Registros a retornar (default 20)" },
+                { "key": "offset", "value": "0", "description": "Registros a saltar (default 0)" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /tags/:id — Obtener etiqueta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/tags/{{tagId}}", "host": ["{{baseUrl}}"], "path": ["tags", "{{tagId}}"] }
+          }
+        },
+        {
+          "name": "PATCH /tags/:id — [Admin] Actualizar etiqueta",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/tags/{{tagId}}", "host": ["{{baseUrl}}"], "path": ["tags", "{{tagId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bio\",\n  \"slug\": \"bio\"\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /tags/:id — [Admin] Eliminar etiqueta",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/tags/{{tagId}}", "host": ["{{baseUrl}}"], "path": ["tags", "{{tagId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "POST /orders — Crear pedido",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/orders", "host": ["{{baseUrl}}"], "path": ["orders"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"stripeSessionId\": \"cs_test_xxxxxxxxxxxxxxxx\",\n  \"total\": 91.98,\n  \"discount\": 0,\n  \"status\": \"PENDING\",\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"quantity\": 2,\n      \"price\": 45.99\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /orders — [Admin] Listar todos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/orders?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders"],
+              "query": [
+                { "key": "limit", "value": "20", "description": "Registros a retornar (default 20)" },
+                { "key": "offset", "value": "0", "description": "Registros a saltar (default 0)" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /orders/:id — Obtener pedido",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["orders", "{{orderId}}"] }
+          }
+        },
+        {
+          "name": "PATCH /orders/:id — [Admin] Actualizar pedido",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["orders", "{{orderId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SHIPPED\"\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /orders/:id — [Admin] Eliminar pedido",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["orders", "{{orderId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart — Admin",
+      "item": [
+        {
+          "name": "POST /cart — [Admin] Crear carrito",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/cart", "host": ["{{baseUrl}}"], "path": ["cart"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /cart — [Admin] Listar todos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/cart?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart"],
+              "query": [
+                { "key": "limit", "value": "20", "description": "Registros a retornar (default 20)" },
+                { "key": "offset", "value": "0", "description": "Registros a saltar (default 0)" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /cart/:id — [Admin] Obtener carrito",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/cart/{{cartId}}", "host": ["{{baseUrl}}"], "path": ["cart", "{{cartId}}"] }
+          }
+        },
+        {
+          "name": "PATCH /cart/:id — [Admin] Actualizar carrito",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/cart/{{cartId}}", "host": ["{{baseUrl}}"], "path": ["cart", "{{cartId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"couponId\": \"{{couponId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /cart/:id — [Admin] Eliminar carrito",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/cart/{{cartId}}", "host": ["{{baseUrl}}"], "path": ["cart", "{{cartId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart — Customer",
+      "item": [
+        {
+          "name": "GET /cart/user/:userId — Ver mi carrito",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/cart/user/{{userId}}", "host": ["{{baseUrl}}"], "path": ["cart", "user", "{{userId}}"] }
+          }
+        },
+        {
+          "name": "POST /cart/user/:userId/items — Agregar producto",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/cart/user/{{userId}}/items", "host": ["{{baseUrl}}"], "path": ["cart", "user", "{{userId}}", "items"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "PATCH /cart/user/:userId/items/:productId — Actualizar cantidad",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/cart/user/{{userId}}/items/{{productId}}", "host": ["{{baseUrl}}"], "path": ["cart", "user", "{{userId}}", "items", "{{productId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3\n}"
+            }
+          }
+        },
+        {
+          "name": "PATCH /cart/user/:userId/items — Reemplazar todos los ítems",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/cart/user/{{userId}}/items", "host": ["{{baseUrl}}"], "path": ["cart", "user", "{{userId}}", "items"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"{{productId}}\", \"quantity\": 1 }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /cart/user/:userId/items/:productId — Quitar producto",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/cart/user/{{userId}}/items/{{productId}}", "host": ["{{baseUrl}}"], "path": ["cart", "user", "{{userId}}", "items", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "DELETE /cart/user/:userId/items — Vaciar carrito",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/cart/user/{{userId}}/items", "host": ["{{baseUrl}}"], "path": ["cart", "user", "{{userId}}", "items"] }
+          }
+        },
+        {
+          "name": "POST /cart/user/:userId/coupons/apply-cart — Aplicar cupón al carrito",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/cart/user/{{userId}}/coupons/apply-cart", "host": ["{{baseUrl}}"], "path": ["cart", "user", "{{userId}}", "coupons", "apply-cart"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"couponCode\": \"{{couponCode}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /cart/user/:userId/coupons/apply-item/:productId — Aplicar cupón a ítem",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/cart/user/{{userId}}/coupons/apply-item/{{productId}}", "host": ["{{baseUrl}}"], "path": ["cart", "user", "{{userId}}", "coupons", "apply-item", "{{productId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"couponCode\": \"{{couponCode}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /cart/user/:userId/coupons/apply-group — Aplicar cupón a grupo",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/cart/user/{{userId}}/coupons/apply-group", "host": ["{{baseUrl}}"], "path": ["cart", "user", "{{userId}}", "coupons", "apply-group"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"couponCode\": \"{{couponCode}}\",\n  \"productIds\": [\"{{productId}}\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /cart/user/:userId/coupons/:applicationId — Quitar aplicación de cupón",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/cart/user/{{userId}}/coupons/{{applicationId}}", "host": ["{{baseUrl}}"], "path": ["cart", "user", "{{userId}}", "coupons", "{{applicationId}}"] }
+          }
+        },
+        {
+          "name": "DELETE /cart/user/:userId/coupons — Quitar todos los cupones",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/cart/user/{{userId}}/coupons", "host": ["{{baseUrl}}"], "path": ["cart", "user", "{{userId}}", "coupons"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wishlist — Admin",
+      "item": [
+        {
+          "name": "POST /wishlist — [Admin] Crear wishlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/wishlist", "host": ["{{baseUrl}}"], "path": ["wishlist"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /wishlist — [Admin] Listar todas",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/wishlist?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["wishlist"],
+              "query": [
+                { "key": "limit", "value": "20", "description": "Registros a retornar (default 20)" },
+                { "key": "offset", "value": "0", "description": "Registros a saltar (default 0)" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /wishlist/:id — [Admin] Obtener wishlist",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/wishlist/{{wishlistId}}", "host": ["{{baseUrl}}"], "path": ["wishlist", "{{wishlistId}}"] }
+          }
+        },
+        {
+          "name": "PATCH /wishlist/:id — [Admin] Actualizar wishlist",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/wishlist/{{wishlistId}}", "host": ["{{baseUrl}}"], "path": ["wishlist", "{{wishlistId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /wishlist/:id — [Admin] Eliminar wishlist",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/wishlist/{{wishlistId}}", "host": ["{{baseUrl}}"], "path": ["wishlist", "{{wishlistId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wishlist — Customer",
+      "item": [
+        {
+          "name": "GET /wishlist/user/:userId — Ver mi wishlist",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/wishlist/user/{{userId}}", "host": ["{{baseUrl}}"], "path": ["wishlist", "user", "{{userId}}"] }
+          }
+        },
+        {
+          "name": "POST /wishlist/user/:userId/items — Agregar producto",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/wishlist/user/{{userId}}/items", "host": ["{{baseUrl}}"], "path": ["wishlist", "user", "{{userId}}", "items"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PATCH /wishlist/user/:userId/items — Reemplazar productos",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/wishlist/user/{{userId}}/items", "host": ["{{baseUrl}}"], "path": ["wishlist", "user", "{{userId}}", "items"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productIds\": [\"{{productId}}\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /wishlist/user/:userId/items/:productId — Quitar producto",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/wishlist/user/{{userId}}/items/{{productId}}", "host": ["{{baseUrl}}"], "path": ["wishlist", "user", "{{userId}}", "items", "{{productId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Addresses",
+      "item": [
+        {
+          "name": "POST /addresses — Crear dirección",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/addresses", "host": ["{{baseUrl}}"], "path": ["addresses"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"label\": \"Casa\",\n  \"recipientName\": \"Juan Pérez\",\n  \"phone\": \"+58 412-0000000\",\n  \"line1\": \"Av. Principal 123\",\n  \"line2\": \"Apto 4B\",\n  \"city\": \"Caracas\",\n  \"state\": \"Distrito Capital\",\n  \"zip\": \"1010\",\n  \"country\": \"Venezuela\",\n  \"isDefault\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /addresses — [Admin] Listar todas",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/addresses?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["addresses"],
+              "query": [
+                { "key": "limit", "value": "20", "description": "Registros a retornar (default 20)" },
+                { "key": "offset", "value": "0", "description": "Registros a saltar (default 0)" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /addresses/:id — Obtener dirección",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/addresses/{{addressId}}", "host": ["{{baseUrl}}"], "path": ["addresses", "{{addressId}}"] }
+          }
+        },
+        {
+          "name": "PATCH /addresses/:id — Actualizar dirección",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/addresses/{{addressId}}", "host": ["{{baseUrl}}"], "path": ["addresses", "{{addressId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"line1\": \"Calle Nueva 456\",\n  \"isDefault\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /addresses/:id — Eliminar dirección",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/addresses/{{addressId}}", "host": ["{{baseUrl}}"], "path": ["addresses", "{{addressId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Coupons",
+      "item": [
+        {
+          "name": "POST /coupons — [Admin] Crear cupón",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/coupons", "host": ["{{baseUrl}}"], "path": ["coupons"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"VERANO2025\",\n  \"discountType\": \"PERCENTAGE\",\n  \"amount\": 10,\n  \"isActive\": true,\n  \"expiryDate\": \"2025-12-31T23:59:59.000Z\",\n  \"usageLimit\": 100\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /coupons — Listar todos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/coupons?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["coupons"],
+              "query": [
+                { "key": "limit", "value": "20", "description": "Registros a retornar (default 20)" },
+                { "key": "offset", "value": "0", "description": "Registros a saltar (default 0)" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /coupons/:id — Obtener cupón",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/coupons/{{couponId}}", "host": ["{{baseUrl}}"], "path": ["coupons", "{{couponId}}"] }
+          }
+        },
+        {
+          "name": "PATCH /coupons/:id — [Admin] Actualizar cupón",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/coupons/{{couponId}}", "host": ["{{baseUrl}}"], "path": ["coupons", "{{couponId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false,\n  \"amount\": 15\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /coupons/:id — [Admin] Eliminar cupón",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/coupons/{{couponId}}", "host": ["{{baseUrl}}"], "path": ["coupons", "{{couponId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Banners",
+      "item": [
+        {
+          "name": "POST /banners — [Admin] Crear banner",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/banners", "host": ["{{baseUrl}}"], "path": ["banners"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image\": \"https://cdn.ejemplo.com/banner.jpg\",\n  \"title\": \"Gran Venta de Temporada\",\n  \"description\": \"Hasta 40% de descuento en vinos seleccionados\",\n  \"buttonText\": \"Comprar ahora\",\n  \"buttonLink\": \"/products?sale=true\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /banners — Listar todos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/banners?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["banners"],
+              "query": [
+                { "key": "limit", "value": "20", "description": "Registros a retornar (default 20)" },
+                { "key": "offset", "value": "0", "description": "Registros a saltar (default 0)" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /banners/:id — Obtener banner",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/banners/{{bannerId}}", "host": ["{{baseUrl}}"], "path": ["banners", "{{bannerId}}"] }
+          }
+        },
+        {
+          "name": "PATCH /banners/:id — [Admin] Actualizar banner",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/banners/{{bannerId}}", "host": ["{{baseUrl}}"], "path": ["banners", "{{bannerId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Oferta de Fin de Año\",\n  \"buttonText\": \"Ver ofertas\"\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /banners/:id — [Admin] Eliminar banner",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/banners/{{bannerId}}", "host": ["{{baseUrl}}"], "path": ["banners", "{{bannerId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "POST /notifications — Crear notificación",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/notifications", "host": ["{{baseUrl}}"], "path": ["notifications"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "GET /notifications — Listar todas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"],
+              "query": [
+                { "key": "limit", "value": "20", "description": "Registros a retornar (default 20)" },
+                { "key": "offset", "value": "0", "description": "Registros a saltar (default 0)" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /notifications/:id — Obtener notificación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/notifications/{{notificationId}}", "host": ["{{baseUrl}}"], "path": ["notifications", "{{notificationId}}"] }
+          }
+        },
+        {
+          "name": "PATCH /notifications/:id — Actualizar notificación",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/notifications/{{notificationId}}", "host": ["{{baseUrl}}"], "path": ["notifications", "{{notificationId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /notifications/:id — Eliminar notificación",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/notifications/{{notificationId}}", "host": ["{{baseUrl}}"], "path": ["notifications", "{{notificationId}}"] }
+          }
+        }
+      ]
+    }
+  ]
+}

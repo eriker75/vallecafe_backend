@@ -1,0 +1,760 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -----------------------------------------------------------------------------
+// ENUMS
+// -----------------------------------------------------------------------------
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum ProductRelationType {
+  UPSELL
+  CROSS_SELL
+}
+
+enum NotificationStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+}
+
+enum NotificationAudience {
+  ALL_USERS
+  NEW_USERS
+  VIP
+  INACTIVE
+  CART_ABANDONMENT
+  NEWSLETTER
+  // Segmentación por tipo de cuenta (User.accountType). Permite campañas dirigidas
+  // a mayoristas (B2B) o minoristas (B2C) — ver [[wholesale-accounttype]].
+  WHOLESALE_B2B
+  RETAIL_B2C
+}
+
+enum ContactMessageStatus {
+  NEW
+  READ
+  ARCHIVED
+  TRASHED
+}
+
+enum ContactBlockType {
+  EMAIL
+  IP
+  KEYWORD
+}
+
+// -----------------------------------------------------------------------------
+// USUARIOS
+// -----------------------------------------------------------------------------
+// userId  → PK autoincremental (interno / base de datos)
+// id      → UUID único (externo / API / URLs)
+// Las FKs entre modelos apuntan a `id` (UUID) para no exponer secuencias.
+// -----------------------------------------------------------------------------
+model User {
+  userId           Int       @id @default(autoincrement())
+  id               String    @unique @default(uuid())
+  email            String    @unique
+  firstName        String
+  lastName         String
+  avatar           String?
+  birthDate        String?   // fecha de nacimiento (YYYY-MM-DD). String para evitar líos de zona horaria.
+  password         String?   // opcional: las cuentas creadas vía login social (Google/Apple) no tienen contraseña local
+  phone            String
+  address          String
+  city             String
+  state            String
+  zip              String
+  country          String    @default("Venezuela")
+  // Ubicación del cliente (set desde el mapa del panel de clientes; bidireccional
+  // con los inputs de dirección). Para tracking/logística. Opcional.
+  latitude         Float?
+  longitude        Float?
+  role             String    @default("customer")
+  status           String    @default("active")
+  // Verificación del correo: se marca true cuando el usuario hace clic en el
+  // enlace que recibe por email tras registrarse. NO bloquea el login por
+  // defecto (es un sello de confianza); puede exigirse más adelante.
+  emailVerified    Boolean   @default(false)
+  emailVerifiedAt  DateTime?
+  // Segmento comercial del cliente (NO es un permiso; el permiso es `role`).
+  // "B2C" = minorista (participa de puntos). "B2B" = mayorista (precio mayorista,
+  // ve productos WHOLESALE_ONLY, NO participa de puntos). String (no enum físico)
+  // para poder añadir niveles a futuro (VIP, distribuidor) sin migraciones de enum.
+  accountType      String    @default("B2C")
+
+  orders         Order[]
+  wishlist       Wishlist?
+  cart           Cart?
+  addresses      Address[]
+  refreshTokens  RefreshToken[]
+  socialAccounts SocialAccount[]
+  contacts       Contact[]
+  settings       UserSetting[]
+  pushTokens     PushToken[]
+  notifications  NotificationRecipient[]
+  verificationTokens VerificationToken[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // Soft delete: en vez de borrar la fila, el admin la marca con la fecha de
+  // borrado. Así no se pierde la información del cliente (pedidos, historial…).
+  // Las consultas de listado/stats/login filtran las filas con deletedAt != NULL.
+  deletedAt DateTime?
+
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+// -----------------------------------------------------------------------------
+// TOKENS DE UN SOLO USO (verificación de correo + recuperación de contraseña)
+// -----------------------------------------------------------------------------
+// Por seguridad NO se guarda el token que viaja en el correo: se guarda su HASH
+// (sha256). El enlace lleva el token en claro; el backend lo hashea y busca la
+// fila. Así, una filtración de la base no expone tokens usables.
+//   · type      → 'EMAIL_VERIFICATION' | 'PASSWORD_RESET'
+//   · expiresAt → reset: 1h · verificación: 24h
+//   · usedAt    → un token se consume una sola vez
+model VerificationToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  type      String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, type])
+  @@map("verification_tokens")
+}
+
+// -----------------------------------------------------------------------------
+// AUTENTICACIÓN SOCIAL (Google, Apple, …)
+// -----------------------------------------------------------------------------
+// Cada fila vincula la cuenta de un proveedor externo (OIDC/OAuth) con un User
+// local. Un mismo User puede tener varias (p.ej. Google y Apple a la vez).
+//
+// Flujo de login social previsto:
+//   1) El cliente obtiene un id_token del proveedor (Google/Apple).
+//   2) El backend lo verifica y extrae el provider + el `sub` (= providerAccountId).
+//   3) Se busca por (provider, providerAccountId):
+//        · existe     → se emite el par de tokens para el User vinculado.
+//        · no existe   → se crea el User (sin password) + su SocialAccount,
+//                        o se vincula al User existente que ya tenga ese email.
+model SocialAccount {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider          String    // "google" | "apple" | ...
+  providerAccountId String    // id estable del proveedor (claim `sub` del id_token)
+
+  // Snapshot informativo del perfil que devuelve el proveedor
+  email             String?
+  name              String?
+  avatar            String?
+
+  // Tokens del proveedor (opcionales; sólo si más adelante consumimos sus APIs).
+  // Si se almacenan, conviene cifrarlos en reposo.
+  accessToken       String?
+  refreshToken      String?
+  tokenExpiresAt    DateTime?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // No puede vincularse dos veces la misma cuenta del mismo proveedor
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("social_accounts")
+}
+
+model Address {
+  addressId     Int      @id @default(autoincrement())
+  id            String   @unique @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label         String?
+  recipientName String
+  phone         String
+  line1         String
+  line2         String?
+  city          String
+  state         String
+  zip           String
+  country       String   @default("Venezuela")
+  latitude      Float?
+  longitude     Float?
+  // PostGIS DESHABILITADO (diferido): requiere la extensión `postgis` en Postgres
+  // (imagen postgis/postgis o `CREATE EXTENSION postgis`). Hoy la ubicación se
+  // guarda en `latitude`/`longitude` (Float). Para reactivar: habilita postgis,
+  // descomenta la línea de abajo y el bloque $executeRaw en orders.service. Prisma
+  // NO escribe tipos Unsupported (se puebla con SQL crudo). Ver sql/bcv_postgis.sql.
+  // location      Unsupported("geography(Point, 4326)")?
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  shippingOrders Order[] @relation("OrderShippingAddress")
+
+  @@map("addresses")
+}
+
+// -----------------------------------------------------------------------------
+// CATÁLOGO E INVENTARIO
+// -----------------------------------------------------------------------------
+model Category {
+  categoryId Int        @id @default(autoincrement())
+  id         String     @unique @default(uuid())
+  name       String
+  slug       String     @unique
+  image      String?
+  parentId   String?
+  parent     Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children   Category[] @relation("CategoryHierarchy")
+  products   Product[]  @relation("CategoryProducts")
+
+  @@map("categories")
+}
+
+model Product {
+  productId    Int     @id @default(autoincrement())
+  id           String  @unique @default(uuid())
+  name         String
+  description  String
+  // Precio del producto (la bolsa). El café se vende en bolsas estandarizadas: cada
+  // producto es una bolsa que se compra por unidades enteras.
+  price        Decimal
+  // Precio de oferta. Si está definido y es menor que `price`, el cliente paga este
+  // precio y la card muestra el precio normal tachado. null = sin oferta.
+  offerPrice   Decimal?
+  // Costo del producto (lo que paga la tienda). SOLO admin: nunca se expone al cliente
+  // (se omite en respuestas públicas de catálogo/carrito/orden). Base de utilidades/COGS.
+  cost         Decimal? @db.Decimal(12, 2)
+  // Peso/tamaño de la bolsa en KG (3 decimales: 0.275 = 275g, 1 = 1kg, 4 = 4kg). Es un
+  // identificador (como la talla de una camisa): se muestra en la card (<1kg → "g",
+  // ≥1kg → "kg") y sirve para filtrar el catálogo.
+  weightKg     Decimal? @db.Decimal(7, 3)
+  mainImage    String?
+  images       Json
+  // Stock disponible (cantidad de bolsas). Entero: la compra es por unidades.
+  stock        Int     @default(0)
+  pointsPrice  Float?
+  pointsEarned Float?
+  // Quién puede ver/comprar el producto. "ALL" = todos; "RETAIL_ONLY" = solo B2C
+  // (e invitados); "WHOLESALE_ONLY" = solo B2B. El admin siempre ve todo. String
+  // (no enum físico) por consistencia con role/status. Se filtra en ProductsService
+  // y se re-valida en el checkout (no confiar en el cliente).
+  visibility   String  @default("ALL")
+
+  categoryId String?
+  category   Category? @relation("CategoryProducts", fields: [categoryId], references: [id])
+
+  variants           ProductVariant[]
+  attributes         ProductAttribute[]
+  productTags        ProductTag[]
+  couponProducts     CouponProduct[]
+
+  relatedProducts ProductRelated[] @relation("relatedProducts")
+  relatedTo       ProductRelated[] @relation("relatedTo")
+
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  wishlistItems WishlistItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("products")
+}
+
+model ProductVariant {
+  id        String  @id @default(uuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  value     String
+
+  @@map("product_variants")
+}
+
+model ProductAttribute {
+  id        String  @id @default(uuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  value     String
+
+  @@index([productId])
+  @@unique([productId, name])
+  @@map("product_attributes")
+}
+
+model Tag {
+  tagId       Int          @id @default(autoincrement())
+  id          String       @unique @default(uuid())
+  name        String       @unique
+  slug        String       @unique
+  productTags ProductTag[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("tags")
+}
+
+model ProductTag {
+  productId String
+  tagId     String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([productId, tagId])
+  @@index([tagId])
+  @@map("product_tags")
+}
+
+model ProductRelated {
+  id           String              @id @default(uuid())
+  productId    String
+  product      Product             @relation("relatedProducts", fields: [productId], references: [id], onDelete: Cascade)
+  relatedId    String
+  related      Product             @relation("relatedTo", fields: [relatedId], references: [id], onDelete: Cascade)
+  relationType ProductRelationType
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@unique([productId, relatedId, relationType])
+  @@index([productId])
+  @@index([relatedId])
+  @@map("product_relations")
+}
+
+// -----------------------------------------------------------------------------
+// CUPONES Y DESCUENTOS
+// -----------------------------------------------------------------------------
+model Coupon {
+  couponId     Int          @id @default(autoincrement())
+  id           String       @unique @default(uuid())
+  code         String       @unique
+  discountType DiscountType
+  amount       Decimal
+  isActive     Boolean      @default(true)
+  expiryDate   DateTime?
+  usageLimit   Int?
+  usageCount   Int          @default(0)
+
+  carts            Cart[]
+  orders           Order[]
+  couponProducts   CouponProduct[]
+
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("coupons")
+}
+
+model CouponProduct {
+  couponId  String
+  productId String
+  coupon    Coupon  @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([couponId, productId])
+  @@index([productId])
+  @@map("coupon_products")
+}
+
+// -----------------------------------------------------------------------------
+// CARRITO DE COMPRAS
+// -----------------------------------------------------------------------------
+model Cart {
+  cartId Int    @id @default(autoincrement())
+  id     String @unique @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  couponId String?
+  coupon   Coupon? @relation(fields: [couponId], references: [id])
+
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String  @id @default(uuid())
+  cartId    String
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // Cantidad de bolsas (entero): la compra es por unidades.
+  quantity  Int     @default(1)
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+
+// -----------------------------------------------------------------------------
+// WISHLIST
+// -----------------------------------------------------------------------------
+model Wishlist {
+  wishlistId Int            @id @default(autoincrement())
+  id         String         @unique @default(uuid())
+  userId     String         @unique
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items      WishlistItem[]
+
+  @@map("wishlists")
+}
+
+model WishlistItem {
+  id         String   @id @default(uuid())
+  wishlistId String
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([wishlistId, productId])
+  @@index([productId])
+  @@map("wishlist_items")
+}
+
+// -----------------------------------------------------------------------------
+// PEDIDOS Y PAGOS
+// -----------------------------------------------------------------------------
+model Order {
+  orderId         Int         @id @default(autoincrement())
+  id              String      @unique @default(uuid())
+  userId   String
+  user     User        @relation(fields: [userId], references: [id])
+
+  couponId String?
+  coupon   Coupon? @relation(fields: [couponId], references: [id])
+
+  shippingAddressId String?
+  shippingAddress   Address?  @relation("OrderShippingAddress", fields: [shippingAddressId], references: [id])
+  contactId         String?
+  contact           Contact?  @relation(fields: [contactId], references: [id])
+  payment           Payment?
+  shipping          Decimal   @default(0)
+  notes             String?
+
+  discount Decimal     @default(0)
+  total    Decimal
+  // Estado del pedido como VARCHAR(50) libre (no un enum físico de Postgres),
+  // para poder añadir estados futuros sin migraciones de enum. El conjunto válido
+  // se valida en TypeScript (enum OrderStatus en src/orders/order-status.enum.ts).
+  status   String      @default("PENDING") @db.VarChar(50)
+
+  // Puntos de fidelidad que otorga este pedido. `pointsEarned` se calcula y
+  // congela al hacer checkout (snapshot, inmune a cambios posteriores del
+  // catálogo). `pointsAwarded` evita acreditarlos dos veces: se suman al saldo
+  // del usuario cuando el pago queda COMPLETED (idempotente). Ver LoyaltyService.
+  pointsEarned  Int     @default(0)
+  pointsAwarded Boolean @default(false)
+
+  // Momento en que el pedido pasó a COMPLETED. Se usa para expirar el seguimiento
+  // público (ver OrdersService.findOneForTracking): pasados N días, sólo el dueño
+  // autenticado o un admin pueden verlo.
+  completedAt DateTime?
+
+  items     OrderItem[]
+  createdAt DateTime    @default(now())
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  // Cantidad de bolsas (entero).
+  quantity  Int
+  // Precio unitario congelado al momento de la compra (snapshot).
+  price     Decimal
+  // Costo unitario congelado al momento de la compra (snapshot del Product.cost).
+  // SOLO admin/finanzas: se omite en respuestas de orden de cara al cliente. null en
+  // órdenes históricas previas al costeo → excluidas del COGS.
+  costSnapshot Decimal? @db.Decimal(12, 2)
+
+  @@map("order_items")
+}
+
+model Contact {
+  id        String   @id @default(uuid())
+  firstName String
+  lastName  String
+  email     String   @unique
+  phone     String?
+  // Marca que el contacto se originó (también) al suscribirse al newsletter web.
+  // Las demás "fuentes" (registro/compra/formulario) se derivan de relaciones;
+  // el newsletter no tiene relación propia, por eso se persiste como flag.
+  fromNewsletter Boolean @default(false)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  orders    Order[]
+  messages  ContactMessage[]
+  blocks    ContactBlock[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("contacts")
+}
+
+model Payment {
+  id              String    @id @default(uuid())
+  // orderId es OPCIONAL: en pago móvil el cliente paga primero y el abono llega
+  // por el webhook de R4 ANTES de que exista la orden. Ese abono se guarda como
+  // un pago "huérfano" (orderId=null) y el checkout lo reclama luego por
+  // `reference`. @unique sigue garantizando un solo pago por orden (en Postgres
+  // los NULL no colisionan, así que se permiten varios abonos sin orden).
+  orderId         String?   @unique
+  order           Order?    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  method          String    // 'pago_movil' | 'efectivo' | 'puntos' | 'yummy'
+  status          String    @default("PENDING") // PENDING|PROCESSING|COMPLETED|FAILED|REFUNDED
+  amount          Decimal
+  currency        String    @default("USD")
+  reference       String?
+  payerIdDocument String?
+  payerName       String?
+  payerPhone      String?
+  bank            String?
+  bcvRate         Decimal?
+  amountVes       Decimal?
+  rawWebhook      Json?
+  confirmedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([reference])
+  @@map("payments")
+}
+
+// -----------------------------------------------------------------------------
+// BANNERS Y PROMOCIONES
+// -----------------------------------------------------------------------------
+model Banner {
+  bannerId    Int      @id @default(autoincrement())
+  id          String   @unique @default(uuid())
+  image       String
+  title       String
+  description String
+  buttonText  String
+  buttonLink  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("banners")
+}
+
+// -----------------------------------------------------------------------------
+// CONFIGURACIÓN GLOBAL DEL SITIO
+// -----------------------------------------------------------------------------
+model Setting {
+  settingId Int      @id @default(autoincrement())
+  id        String   @unique @default(uuid())
+  metaKey   String   @unique
+  metaValue String
+  metaGroup String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([metaGroup])
+  @@map("settings")
+}
+
+// -----------------------------------------------------------------------------
+// CONFIGURACIÓN / DATOS POR USUARIO (clave-valor)
+// -----------------------------------------------------------------------------
+// Almacén clave-valor por usuario (espejo de `settings` pero con scope de
+// usuario). Hoy guarda el saldo de puntos de fidelidad bajo la clave
+// `loyalty_points` (metaValue = entero serializado como string). El saldo se
+// acredita cuando el pago de un pedido queda COMPLETED — ver LoyaltyService.awardForOrder, que
+// hace un UPSERT atómico con CAST a INTEGER para que increments concurrentes no
+// se pisen aunque metaValue sea texto.
+model UserSetting {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  metaKey   String // p.ej. "loyalty_points"
+  metaValue String // valor serializado (para puntos: entero como string)
+  metaGroup String? // agrupa settings relacionados (p.ej. "notifications")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, metaKey])
+  @@index([userId])
+  @@index([metaGroup])
+  @@map("user_settings")
+}
+
+// -----------------------------------------------------------------------------
+// TASA BCV (USD → VES)
+// -----------------------------------------------------------------------------
+// Historial de tasas. La fila más reciente (createdAt desc) es la tasa vigente.
+model BcvRate {
+  id        String   @id @default(uuid())
+  rate      Decimal  @db.Decimal(18, 4)
+  source    String   // 'EXCHANGERATE_API' | 'MANUAL' | 'R4'
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("bcv_rates")
+}
+
+// -----------------------------------------------------------------------------
+// NOTIFICACIONES
+// -----------------------------------------------------------------------------
+// Una `Notification` es la CAMPAÑA: el contenido + el segmento (`audience`) al que
+// va dirigida. No apunta a un usuario concreto (va a muchos). La entrega real a
+// cada usuario se materializa en `NotificationRecipient` al pulsar "Enviar".
+model Notification {
+  id          String               @id @default(uuid())
+  title       String
+  message     String
+  audience    NotificationAudience @default(ALL_USERS)
+  status      NotificationStatus   @default(DRAFT)
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  // Nº de usuarios alcanzados (filas de NotificationRecipient creadas al enviar).
+  sentCount   Int                  @default(0)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  recipients NotificationRecipient[]
+
+  @@map("notifications")
+}
+
+// -----------------------------------------------------------------------------
+// ENTREGA DE NOTIFICACIONES (buzón por usuario) — relación M:N Notification↔User
+// -----------------------------------------------------------------------------
+// Tabla intermedia que materializa "a qué usuarios se les envió esta campaña".
+// Se crea una fila por (notificación, usuario) al ejecutar el envío (resolviendo
+// la `audience` a usuarios). Es lo que alimenta el buzón in-app y el estado de
+// leído/no leído por usuario. El push (PushToken) es solo el transporte: un
+// usuario recibe la entrada en su buzón aunque no tenga dispositivos con push.
+model NotificationRecipient {
+  id             String       @id @default(uuid())
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  read           Boolean      @default(false)
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  // Un usuario no recibe dos veces la misma campaña (idempotencia del envío).
+  @@unique([notificationId, userId])
+  // Buzón: "mis notificaciones (no leídas)" ordenadas por fecha.
+  @@index([userId, read])
+  @@index([notificationId])
+  @@map("notification_recipients")
+}
+
+// -----------------------------------------------------------------------------
+// PUSH TOKENS (Expo / dispositivos del cliente)
+// -----------------------------------------------------------------------------
+// Cada fila es el token de notificaciones push de un dispositivo de la app móvil
+// (Expo). Equivale a `nowful_user_fcm_tokens` del proyecto Nowful, adaptado al
+// SDK de Expo. El móvil registra su token tras conceder permisos (ver
+// PushNotificationProvider en la app); el backend lo usa para enviar campañas y
+// avisos transaccionales vía expo-server-sdk.
+//
+// · token      → "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]". Único: un mismo
+//                dispositivo pertenece a un solo usuario a la vez. Al re-loguearse
+//                en otro dispositivo/cuenta se reasigna el userId (upsert por token,
+//                como el ON DUPLICATE KEY de Nowful).
+// · enabled    → el usuario puede silenciar este dispositivo sin borrar el token
+//                (switch de ajustes). Espejo del flag `enabled` de Nowful.
+// · tokens inválidos (DeviceNotRegistered en el ticket de Expo) se borran
+//   automáticamente al enviar — ese token ya no volverá a ser válido.
+model PushToken {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String   @unique
+  // Plataforma del dispositivo: "ios" | "android" | "web". Informativo.
+  platform   String?
+  // Nombre/modelo del dispositivo o user-agent (espejo de `browser` en Nowful).
+  deviceName String?
+  enabled    Boolean  @default(true)
+  // Última vez que el token se registró/refrescó desde la app. Útil para depurar
+  // y, a futuro, purgar tokens viejos.
+  lastUsedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([enabled])
+  @@map("push_tokens")
+}
+
+// -----------------------------------------------------------------------------
+// MENSAJES DE CONTACTO (formulario público → bandeja del dashboard)
+// -----------------------------------------------------------------------------
+model ContactMessage {
+  id        String               @id @default(uuid())
+  name      String
+  email     String
+  subject   String?
+  message   String
+  ipAddress String?
+  status    ContactMessageStatus @default(NEW)
+  contactId String?
+  contact   Contact?             @relation(fields: [contactId], references: [id])
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("contact_messages")
+}
+
+// Lista negra anti-spam: emails, IPs o palabras clave que se rechazan
+// automáticamente al recibir un mensaje de contacto.
+model ContactBlock {
+  id        String           @id @default(uuid())
+  type      ContactBlockType
+  value     String
+  reason    String?
+  contactId String?
+  contact   Contact?         @relation(fields: [contactId], references: [id])
+  createdAt DateTime         @default(now())
+
+  @@unique([type, value])
+  @@index([type])
+  @@index([contactId])
+  @@map("contact_blocks")
+}

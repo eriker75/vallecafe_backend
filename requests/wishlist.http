@@ -1,0 +1,56 @@
+@baseUrl = http://localhost:3000
+
+### -----------------------------
+### WISHLIST (USUARIO)
+### -----------------------------
+
+### Obtener o crear wishlist de un usuario
+GET {{baseUrl}}/wishlist/user/{{userId}}
+
+### Agregar producto a wishlist del usuario
+POST {{baseUrl}}/wishlist/user/{{userId}}/items
+Content-Type: application/json
+
+{
+  "productId": "{{productId}}"
+}
+
+### Reemplazar todos los productos de wishlist
+PATCH {{baseUrl}}/wishlist/user/{{userId}}/items
+Content-Type: application/json
+
+{
+  "productIds": ["{{productId}}", "{{productId2}}"]
+}
+
+### Quitar un producto de wishlist del usuario
+DELETE {{baseUrl}}/wishlist/user/{{userId}}/items/{{productId}}
+
+### -----------------------------
+### WISHLIST CRUD BASE
+### -----------------------------
+
+### Crear wishlist manual (opcional)
+POST {{baseUrl}}/wishlist
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}"
+}
+
+### Obtener todas las wishlists
+GET {{baseUrl}}/wishlist
+
+### Obtener wishlist por id
+GET {{baseUrl}}/wishlist/{{wishlistId}}
+
+### Actualizar wishlist
+PATCH {{baseUrl}}/wishlist/{{wishlistId}}
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}"
+}
+
+### Eliminar wishlist
+DELETE {{baseUrl}}/wishlist/{{wishlistId}}

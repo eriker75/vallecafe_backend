@@ -1,0 +1,84 @@
+@baseUrl = http://localhost:3000
+
+### -----------------------------
+### TAGS CRUD
+### -----------------------------
+
+### Create tag
+POST {{baseUrl}}/tags
+Content-Type: application/json
+
+{
+  "name": "Organico",
+  "slug": "organico"
+}
+
+### Get all tags
+GET {{baseUrl}}/tags
+
+### Get one tag by id
+GET {{baseUrl}}/tags/{{tagId}}
+
+### Update tag
+PATCH {{baseUrl}}/tags/{{tagId}}
+Content-Type: application/json
+
+{
+  "name": "Organico Premium",
+  "slug": "organico-premium"
+}
+
+### Delete tag
+DELETE {{baseUrl}}/tags/{{tagId}}
+
+### -----------------------------
+### PRODUCTS CRUD
+### -----------------------------
+
+### Create product with tags and attributes
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "name": "Vino Tinto Reserva",
+  "description": "Vino tinto con notas frutales y final largo",
+  "price": 25.9,
+  "mainImage": "https://cdn.tuapp.com/products/vino-tinto-main.jpg",
+  "images": [
+    "https://cdn.tuapp.com/products/vino-tinto-main.jpg",
+    "https://cdn.tuapp.com/products/vino-tinto-2.jpg"
+  ],
+  "stock": 20,
+  "categoryId": "{{categoryId}}",
+  "tagIds": [
+    "{{tagId}}"
+  ],
+  "attributes": [
+    { "name": "varietal", "value": "Cabernet Sauvignon" },
+    { "name": "pais", "value": "Chile" },
+    { "name": "anio", "value": "2022" }
+  ]
+}
+
+### Get all products
+GET {{baseUrl}}/products
+
+### Get one product by id
+GET {{baseUrl}}/products/{{productId}}
+
+### Update product (reemplaza tags/attributes si los envias)
+PATCH {{baseUrl}}/products/{{productId}}
+Content-Type: application/json
+
+{
+  "stock": 15,
+  "mainImage": "https://cdn.tuapp.com/products/vino-tinto-main-new.jpg",
+  "tagIds": ["{{tagId}}"],
+  "attributes": [
+    { "name": "varietal", "value": "Blend" },
+    { "name": "pais", "value": "Argentina" }
+  ]
+}
+
+### Delete product
+DELETE {{baseUrl}}/products/{{productId}}

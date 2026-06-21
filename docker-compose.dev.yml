@@ -1,0 +1,120 @@
+services:
+  postgres:
+    container_name: terroir_postgres
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      TZ: "${TZ:-America/Caracas}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB}"
+    volumes:
+      - postgresdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "${POSTGRES_EXT_PORT:-5432}:5432"
+    networks:
+      - appnet
+
+  pgadmin:
+    container_name: terroir_pgadmin
+    image: dpage/pgadmin4:9.10.0
+    restart: on-failure
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "${PGADMIN_DEFAULT_EMAIL}"
+      PGADMIN_DEFAULT_PASSWORD: "${PGADMIN_DEFAULT_PASSWORD}"
+    volumes:
+      - pgadmindata:/var/lib/pgadmin
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    depends_on:
+      - postgres
+    networks:
+      - appnet
+
+  mailpit:
+    container_name: terroir_mailpit
+    image: axllent/mailpit:latest
+    restart: always
+    environment:
+      MP_SMTP_AUTH: "${MAILPIT_SMTP_USER:-mailpit}:${MAILPIT_SMTP_PASS:-mailpit}"
+      MP_SMTP_AUTH_ACCEPT_ANY: "false"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+      MP_SMTP_BIND_ADDR: "0.0.0.0:1025"
+      MP_UI_BIND_ADDR: "0.0.0.0:8025"
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+    networks:
+      - appnet
+    healthcheck:
+      # mailpit es Alpine — usa wget en lugar de curl
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8025 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: terroir_backend
+    image: terroir_backend_dev
+    # tini como PID 1: reapea los procesos hijos del watcher y reenvía señales,
+    # liberando el puerto al recargar → evita "EADDRINUSE :::3000".
+    init: true
+    restart: always
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # mailpit no bloquea el backend — si no hay SMTP el app arranca igual
+      mailpit:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      - SMTP_HOST=${SMTP_HOST:-mailpit}
+      - SMTP_PORT=${SMTP_PORT:-1025}
+      - SMTP_USER=${SMTP_USER:-mailpit}
+      - SMTP_PASS=${SMTP_PASS:-mailpit}
+    volumes:
+      - ./src:/usr/src/app/src
+      - ./scripts:/usr/src/app/scripts
+      - ./prisma:/usr/src/app/prisma
+      - ./prisma.config.ts:/usr/src/app/prisma.config.ts
+      - ./uploads:/usr/src/app/uploads
+      - ./tmp:/usr/src/app/tmp
+      - ./public:/usr/src/app/public
+      # Credenciales de Google Cloud (ADC) en solo-lectura para STORAGE_TYPE=gcs
+      - ./secrets:/usr/src/app/secrets:ro
+    develop:
+      watch:
+        - path: ./package.json
+          target: /usr/src/app/package.json
+          action: rebuild
+    networks:
+      - appnet
+
+networks:
+  appnet:
+    driver: bridge
+
+volumes:
+  postgresdata:
+    name: terroir-postgresdata
+  pgadmindata:
+    name: terroir-pgadmindata

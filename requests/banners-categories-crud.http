@@ -1,0 +1,76 @@
+@baseUrl = http://localhost:3000
+
+### -----------------------------
+### BANNERS CRUD
+### -----------------------------
+
+### Create banner
+POST {{baseUrl}}/banners
+Content-Type: application/json
+
+{
+  "image": "https://cdn.tuapp.com/banners/banner-home-1.jpg",
+  "title": "Nueva coleccion",
+  "description": "Descubre lo nuevo de esta temporada",
+  "buttonText": "Comprar ahora",
+  "buttonLink": "/products"
+}
+
+### Get all banners
+GET {{baseUrl}}/banners
+
+### Get one banner by id
+GET {{baseUrl}}/banners/{{bannerId}}
+
+### Update banner
+PATCH {{baseUrl}}/banners/{{bannerId}}
+Content-Type: application/json
+
+{
+  "title": "Nueva coleccion actualizada",
+  "buttonText": "Ver productos"
+}
+
+### Delete banner
+DELETE {{baseUrl}}/banners/{{bannerId}}
+
+### -----------------------------
+### CATEGORIES CRUD
+### -----------------------------
+
+### Create parent category
+POST {{baseUrl}}/categories
+Content-Type: application/json
+
+{
+  "name": "Vinos",
+  "slug": "vinos"
+}
+
+### Create child category
+POST {{baseUrl}}/categories
+Content-Type: application/json
+
+{
+  "name": "Tintos",
+  "slug": "vinos-tintos",
+  "parentId": "{{parentCategoryId}}"
+}
+
+### Get all categories
+GET {{baseUrl}}/categories
+
+### Get one category by id
+GET {{baseUrl}}/categories/{{categoryId}}
+
+### Update category
+PATCH {{baseUrl}}/categories/{{categoryId}}
+Content-Type: application/json
+
+{
+  "name": "Tintos Premium",
+  "slug": "vinos-tintos-premium"
+}
+
+### Delete category
+DELETE {{baseUrl}}/categories/{{categoryId}}

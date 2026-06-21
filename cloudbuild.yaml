@@ -1,0 +1,110 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# CI/CD del backend — pipeline completo: build → push → migraciones → deploy.
+# Lo ejecuta el trigger de Cloud Build en cada push a main, y también
+# `make gcp-deploy` (gcloud builds submit con este archivo).
+#
+# Requisitos del service account que corre el build (el de Cloud Build):
+#   roles/run.admin + iam.serviceAccountUser sobre terroir-backend@…
+# ═══════════════════════════════════════════════════════════════════════════════
+steps:
+  # 1) Build de la imagen (el .npmrc del repo es imprescindible: legacy-peer-deps)
+  - id: build
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - '-f'
+      - Dockerfile.prod
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/backend:latest'
+      - .
+
+  # 2) Push ANTES de migrar: el job usa esta imagen desde Artifact Registry
+  - id: push
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/backend:latest'
+
+  # 3) Actualizar el job de migraciones a la imagen nueva
+  - id: migrate-job
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: gcloud
+    args:
+      - run
+      - jobs
+      - deploy
+      - terroir-migrate
+      - '--image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/backend:latest'
+      - '--region=${_REGION}'
+      - '--service-account=terroir-backend@${PROJECT_ID}.iam.gserviceaccount.com'
+      - '--set-cloudsql-instances=${PROJECT_ID}:${_REGION}:${_SQL_INSTANCE}'
+      - '--set-secrets=DATABASE_URL=terroir-database-url:latest'
+      - '--command=npx'
+      - '--args=prisma,migrate,deploy'
+      - '--memory=1Gi'
+      - '--max-retries=0'
+      - '--task-timeout=600'
+
+  # 4) Ejecutar las migraciones y ESPERAR: si fallan, el deploy no ocurre
+  #    y la revisión vieja sigue sirviendo tráfico.
+  - id: migrate-run
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: gcloud
+    args:
+      - run
+      - jobs
+      - execute
+      - terroir-migrate
+      - '--region=${_REGION}'
+      - '--wait'
+
+  # 5) Deploy del servicio (RUN_MIGRATIONS=false: ya migró el job).
+  #    OJO: --set-env-vars REEMPLAZA todas las env vars → CORS_ORIGIN debe ir aquí.
+  - id: deploy
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - terroir-backend
+      - '--image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/backend:latest'
+      - '--region=${_REGION}'
+      - '--service-account=terroir-backend@${PROJECT_ID}.iam.gserviceaccount.com'
+      - '--add-cloudsql-instances=${PROJECT_ID}:${_REGION}:${_SQL_INSTANCE}'
+      - '--allow-unauthenticated'
+      - '--memory=1Gi'
+      - '--cpu=1'
+      - '--min-instances=0'
+      - '--max-instances=3'
+      # VPC/NAT: egress por la VPC default → Cloud NAT → IP fija 34.73.166.231
+      # (whitelist del banco R4, docs/cloud-nat-r4.md). NO quitar estas flags.
+      - '--network=default'
+      - '--subnet=default'
+      - '--vpc-egress=all-traffic'
+      - '--set-secrets=DATABASE_URL=terroir-database-url:latest,JWT_SECRET=terroir-jwt-secret:latest,R4_WEBHOOK_TOKEN=terroir-r4-webhook-token:latest,R4_COMMERCE_ID=terroir-r4-commerce-id:latest,SMTP_PASS=terroir-smtp-pass:latest'
+      - '--set-env-vars=NODE_ENV=production,RUN_MIGRATIONS=false,TZ=America/Caracas,STORAGE_TYPE=gcs,GCS_BUCKET_NAME=${_BUCKET},GCP_PROJECT_ID=${PROJECT_ID},CORS_ORIGIN=${_CORS_ORIGIN},FRONTEND_URL=${_FRONTEND_URL},SMTP_HOST=${_SMTP_HOST},SMTP_PORT=587,SMTP_USER=${_SMTP_USER},SMTP_FROM=${_SMTP_FROM},GOOGLE_WEB_CLIENT_ID=${_GOOGLE_WEB_CLIENT_ID},GOOGLE_IOS_CLIENT_ID=${_GOOGLE_IOS_CLIENT_ID},GOOGLE_ANDROID_CLIENT_ID=${_GOOGLE_ANDROID_CLIENT_ID},APPLE_BUNDLE_ID=com.terroir.eribert,APPLE_SERVICE_ID=com.terroir.web.signin,R4_BASE_URL=https://r4conecta.mibanco.com.ve,R4_CUENTA_BANCO=${_R4_CUENTA_BANCO},R4_CUENTA_CEDULA=${_R4_CUENTA_CEDULA},R4_CUENTA_TELEFONO=${_R4_CUENTA_TELEFONO},R4_ALLOWED_IPS=${_R4_ALLOWED_IPS}'
+
+substitutions:
+  _REGION: us-east1
+  _REPO: terroir-artifacts-repository
+  _SQL_INSTANCE: terroir-db-instance
+  _BUCKET: terroir_files_bucket
+# Ambas URLs del web (clásica + determinística), separadas por ';'
+  _CORS_ORIGIN: 'https://terroir-web-rkcvtfjtfa-ue.a.run.app;https://terroir-web-430742211550.us-east1.run.app'
+  _FRONTEND_URL: 'https://terroir-web-rkcvtfjtfa-ue.a.run.app'
+  _GOOGLE_WEB_CLIENT_ID: '430742211550-aubqke137np09p9im7c5sv5hacv32la6.apps.googleusercontent.com'
+  _GOOGLE_IOS_CLIENT_ID: '430742211550-lj5kmjjrhc6tci15f341n4hh1ubpv1qk.apps.googleusercontent.com'
+  _GOOGLE_ANDROID_CLIENT_ID: '430742211550-impju5kjn50tjumm3v6llsrt41b93sgj.apps.googleusercontent.com'
+  _SMTP_HOST: ''
+  _SMTP_USER: ''
+  _SMTP_FROM: 'noreply@tudominio.com'
+  _R4_CUENTA_BANCO: '0169'
+  _R4_CUENTA_CEDULA: 'J-508025903'
+  _R4_CUENTA_TELEFONO: '04245191996'
+# Separadas por ';' (la coma es el separador de --set-env-vars de gcloud)
+  _R4_ALLOWED_IPS: '45.175.213.98;200.74.203.91;204.199.249.3'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 1800s

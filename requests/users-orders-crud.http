@@ -1,0 +1,89 @@
+@baseUrl = http://localhost:3000
+
+### -----------------------------
+### USERS CRUD
+### -----------------------------
+
+### Create user
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "email": "cliente1@demo.com",
+  "firstName": "Juan",
+  "lastName": "Perez",
+  "password": "12345678",
+  "phone": "+58 412-1234567",
+  "address": "Av. Principal",
+  "city": "Caracas",
+  "state": "Distrito Capital",
+  "zip": "1010",
+  "country": "Venezuela",
+  "role": "customer",
+  "status": "active"
+}
+
+### Get all users
+GET {{baseUrl}}/users
+
+### Get one user by id
+GET {{baseUrl}}/users/{{userId}}
+
+### Update user
+PATCH {{baseUrl}}/users/{{userId}}
+Content-Type: application/json
+
+{
+  "firstName": "Juan Carlos",
+  "phone": "+58 424-0000000"
+}
+
+### Delete user
+DELETE {{baseUrl}}/users/{{userId}}
+
+### -----------------------------
+### ORDERS CRUD
+### -----------------------------
+
+### Create order with items
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "stripeSessionId": "cs_test_demo_001",
+  "discount": 2.5,
+  "total": 48.3,
+  "status": "PENDING",
+  "items": [
+    {
+      "productId": "{{productId}}",
+      "quantity": 2,
+      "price": 25.4
+    }
+  ]
+}
+
+### Get all orders
+GET {{baseUrl}}/orders
+
+### Get one order by id
+GET {{baseUrl}}/orders/{{orderId}}
+
+### Update order status or items
+PATCH {{baseUrl}}/orders/{{orderId}}
+Content-Type: application/json
+
+{
+  "status": "PAID",
+  "items": [
+    {
+      "productId": "{{productId}}",
+      "quantity": 1,
+      "price": 25.4
+    }
+  ]
+}
+
+### Delete order
+DELETE {{baseUrl}}/orders/{{orderId}}

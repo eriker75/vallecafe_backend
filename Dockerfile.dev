@@ -1,0 +1,31 @@
+FROM node:20-slim
+
+WORKDIR /usr/src/app
+
+# Solo lo que realmente necesitamos: cliente pg + curl para healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postgresql-client \
+    curl \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar dependencias sin disparar postinstall (el schema no está copiado aún)
+COPY package*.json ./
+RUN npm install --ignore-scripts
+
+# Copiar schema y config de Prisma, luego generar el cliente
+COPY prisma ./prisma/
+COPY prisma.config.ts ./
+ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public"
+RUN npx prisma generate
+
+# Copiar el resto del código fuente
+COPY . .
+
+# Hacer ejecutables los scripts
+RUN chmod +x /usr/src/app/scripts/runner.sh \
+             /usr/src/app/scripts/build-database-url.sh
+
+EXPOSE 3000
+
+CMD ["/bin/bash", "/usr/src/app/scripts/runner.sh"]

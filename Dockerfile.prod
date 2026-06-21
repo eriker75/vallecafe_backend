@@ -1,0 +1,80 @@
+# ============================================
+# STAGE 1: Build
+# ============================================
+ARG NODE_IMAGE=node:22-alpine
+FROM ${NODE_IMAGE} AS builder
+
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+# .npmrc trae legacy-peer-deps=true: sin él, el npm del contenedor espera los
+# peer deps (react & co.) en el lock y `npm ci` falla aunque local funcione.
+COPY .npmrc ./
+COPY prisma ./prisma/
+COPY prisma.config.ts ./
+
+# Install all deps (dev included) without postinstall, then generate Prisma client
+RUN npm ci --ignore-scripts
+
+# Fake URL only for code generation — no DB connection happens here
+ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public"
+RUN npx prisma generate
+
+COPY . .
+
+RUN chmod +x /usr/src/app/scripts/build-database-url.sh \
+             /usr/src/app/scripts/entrypoint.prod.sh
+
+RUN npm run build
+
+# ============================================
+# STAGE 2: Production image
+# ============================================
+ARG NODE_IMAGE=node:22-alpine
+FROM ${NODE_IMAGE} AS production
+
+WORKDIR /usr/src/app
+
+# curl: lo usa el healthcheck de docker-compose.prod.yml
+RUN apk add --no-cache curl postgresql-client
+
+COPY package*.json ./
+COPY .npmrc ./
+COPY prisma ./prisma/
+COPY prisma.config.ts ./
+
+# Production deps only
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+
+# Copy generated Prisma client from builder
+COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /usr/src/app/node_modules/@prisma ./node_modules/@prisma
+
+# Copy compiled app and assets
+COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/public ./public
+
+# Copy scripts
+COPY --from=builder /usr/src/app/scripts/build-database-url.sh ./scripts/build-database-url.sh
+COPY --from=builder /usr/src/app/scripts/entrypoint.prod.sh ./scripts/entrypoint.prod.sh
+
+RUN mkdir -p /usr/src/app/uploads /usr/src/app/tmp && \
+    chmod +x /usr/src/app/scripts/entrypoint.prod.sh \
+             /usr/src/app/scripts/build-database-url.sh
+
+# Non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001 && \
+    chown -R nestjs:nodejs /usr/src/app
+
+USER nestjs
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"
+
+# Sin PM2: Cloud Run (y Docker con restart:always) ya reinician el proceso,
+# y los logs por stdout van directo a Cloud Logging.
+ENTRYPOINT ["/usr/src/app/scripts/entrypoint.prod.sh"]
+CMD ["node", "dist/src/main.js"]

@@ -1,0 +1,80 @@
+@baseUrl = http://localhost:3000
+
+### -----------------------------
+### COUPONS CRUD
+### -----------------------------
+
+### Create coupon (global cart)
+POST {{baseUrl}}/coupons
+Content-Type: application/json
+
+{
+  "code": "WELCOME10",
+  "discountType": "PERCENTAGE",
+  "amount": 10,
+  "isActive": true,
+  "usageLimit": 500
+}
+
+### Create coupon for specific products only
+POST {{baseUrl}}/coupons
+Content-Type: application/json
+
+{
+  "code": "VINO5",
+  "discountType": "FIXED_AMOUNT",
+  "amount": 5,
+  "allowedProductIds": ["{{productId}}", "{{productId2}}"]
+}
+
+### Get all coupons
+GET {{baseUrl}}/coupons
+
+### Get coupon by id
+GET {{baseUrl}}/coupons/{{couponId}}
+
+### Update coupon
+PATCH {{baseUrl}}/coupons/{{couponId}}
+Content-Type: application/json
+
+{
+  "isActive": false
+}
+
+### Delete coupon
+DELETE {{baseUrl}}/coupons/{{couponId}}
+
+### -----------------------------
+### APPLY COUPONS IN CART
+### -----------------------------
+
+### Apply coupon to entire cart
+POST {{baseUrl}}/cart/user/{{userId}}/coupons/apply-cart
+Content-Type: application/json
+
+{
+  "couponCode": "WELCOME10"
+}
+
+### Apply coupon to one product in cart
+POST {{baseUrl}}/cart/user/{{userId}}/coupons/apply-item/{{productId}}
+Content-Type: application/json
+
+{
+  "couponCode": "VINO5"
+}
+
+### Apply coupon to a group of products in cart
+POST {{baseUrl}}/cart/user/{{userId}}/coupons/apply-group
+Content-Type: application/json
+
+{
+  "couponCode": "VINO5",
+  "productIds": ["{{productId}}", "{{productId2}}"]
+}
+
+### Remove one coupon application from cart
+DELETE {{baseUrl}}/cart/user/{{userId}}/coupons/{{applicationId}}
+
+### Clear all coupon applications from cart
+DELETE {{baseUrl}}/cart/user/{{userId}}/coupons

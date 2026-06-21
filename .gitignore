@@ -1,0 +1,32 @@
+# ---- dependencies ----
+/node_modules
+
+# ---- build ----
+/dist
+/build
+*.tsbuildinfo
+
+# ---- env & secrets (NEVER commit) ----
+.env
+.env.*
+!.env.example
+/secrets/
+*-adc.json
+*adc*.json
+**/*firebase-adminsdk*.json
+**/service-account*.json
+*.pem
+*.key
+*.p12
+*.p8
+*.crt
+
+# ---- runtime data ----
+/uploads
+/tmp
+logs/
+*.log
+npm-debug.log*
+
+# ---- misc ----
+.DS_Store

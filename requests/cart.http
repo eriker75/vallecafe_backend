@@ -1,0 +1,71 @@
+@baseUrl = http://localhost:3000
+
+### -----------------------------
+### CART (USUARIO)
+### -----------------------------
+
+### Obtener o crear cart del usuario
+GET {{baseUrl}}/cart/user/{{userId}}
+
+### Agregar producto al cart (si existe, suma cantidad)
+POST {{baseUrl}}/cart/user/{{userId}}/items
+Content-Type: application/json
+
+{
+  "productId": "{{productId}}",
+  "quantity": 1
+}
+
+### Actualizar cantidad de un item
+PATCH {{baseUrl}}/cart/user/{{userId}}/items/{{productId}}
+Content-Type: application/json
+
+{
+  "quantity": 3
+}
+
+### Reemplazar todos los items del carrito
+PATCH {{baseUrl}}/cart/user/{{userId}}/items
+Content-Type: application/json
+
+{
+  "items": [
+    { "productId": "{{productId}}", "quantity": 2 },
+    { "productId": "{{productId2}}", "quantity": 1 }
+  ]
+}
+
+### Quitar producto del cart
+DELETE {{baseUrl}}/cart/user/{{userId}}/items/{{productId}}
+
+### Vaciar carrito del usuario
+DELETE {{baseUrl}}/cart/user/{{userId}}/items
+
+### -----------------------------
+### CART CRUD BASE
+### -----------------------------
+
+### Crear carrito manual (opcional)
+POST {{baseUrl}}/cart
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}"
+}
+
+### Obtener todos los carritos
+GET {{baseUrl}}/cart
+
+### Obtener carrito por id
+GET {{baseUrl}}/cart/{{cartId}}
+
+### Actualizar carrito (ej: couponId)
+PATCH {{baseUrl}}/cart/{{cartId}}
+Content-Type: application/json
+
+{
+  "couponId": "{{couponId}}"
+}
+
+### Eliminar carrito
+DELETE {{baseUrl}}/cart/{{cartId}}
